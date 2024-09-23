@@ -44,7 +44,7 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
     ##该共享内存对象后续会被传入到管理相机数据和实体机械臂数据的类中，进一步实现SharedMemoryRingBuffer和SharedMemoryQueue类。
     with SharedMemoryManager() as shm_manager:
         ##KeystrokeCounter类用于记录键盘按键，并提供按键计数功能。
-        ##Spacemouse类用于读取SpaceMouse数据。
+        ##Spacemouse类用于读取SpaceMouse数据，用于遥控机器人。
         ####RealEnv类主要负责1.接收处理realsens的数据2.机械臂RTDE的数据（控制和读取）3.管理每个演示数据的开始，结束和丢弃。
         with KeystrokeCounter() as key_counter, \
             Spacemouse(shm_manager=shm_manager) as sm, \
@@ -63,11 +63,14 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                 video_crf=21,
                 shm_manager=shm_manager
             ) as env:
+
+
             cv2.setNumThreads(1)
             # realsense exposure
             env.realsense.set_exposure(exposure=120, gain=0)
             # realsense white balance
             env.realsense.set_white_balance(white_balance=5900)
+
 
             time.sleep(1.0)
             print('Ready!')
@@ -173,9 +176,13 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                 cv2.pollKey()
                 ##严格控制时间，到t_sample时刻开始读取space mouse数据
                 precise_wait(t_sample)
+
+                
                 # get teleop command
                 sm_state = sm.get_motion_state_transformed()
                 # print(sm_state)
+
+
                 #sm_state是一个长度为6的数组，分别表示x,y,z,rx,ry,rz，数据大小为（-1,1），为一个比例尺度信息
                 #还需要将sm_state转换为实际的机械臂动作指令，这里的转换方式是将比例尺度信息乘以最大速度，得到实际的动作指令。
                 dpos = sm_state[:3] * (env.max_pos_speed / frequency)
